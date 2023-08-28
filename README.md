@@ -1,8 +1,11 @@
 # Ditto
-Gerenciador de área de transferência que atua em bandeija.
+Gerenciador de área de transferência que atua em bandeja.
 
 ## Em produção:
-- Testes na atuação em bandeja
 - Ajustes em interace gráfica
-- Adição de ícone na janela
 - Possiveis melhorias em funcionamento
+- Listamento de histórico
+
+## Concluido
+- Atuação em bandeja
+- Adição de ícones
