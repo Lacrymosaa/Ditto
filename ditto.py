@@ -1,85 +1,89 @@
-import pystray
+import sys
 import pyperclip
-import threading
-from PIL import Image
-from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QWidget
-
-
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QVBoxLayout, QWidget, QSystemTrayIcon, QAction, QMenu
 
 class Ditto(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.trayIcon = None
 
-        self.setWindowTitle("Ditto - Clipboard Manager")
-        self.setGeometry(100, 100, 400, 300)
+        self.initUI()
+        self.updateClipboard()
 
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
+    def initUI(self):
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
 
-        self.layout = QVBoxLayout()
-        self.central_widget.setLayout(self.layout)
+        layout = QVBoxLayout()
+        self.label = QLabel("", self)
+        self.label.setCursor(Qt.PointingHandCursor)
+        self.label.setFrameStyle(QLabel.Panel | QLabel.Raised)
+        self.label.setMargin(5)
+        self.label.setWordWrap(True)
+        layout.addWidget(self.label)
 
-        self.label = QLabel("Click on words to copy")
-        self.layout.addWidget(self.label)
+        central_widget.setLayout(layout)
 
-        self.update_clipboard_timer = QTimer(self)
-        self.update_clipboard_timer.timeout.connect(self.updateClipboard)
-        self.update_clipboard_timer.start(100)
+        self.setWindowTitle("Ditto's Clipboard Manager")
+        icon = QIcon("Ditto.ico")
+        self.setWindowIcon(icon)
+        self.setGeometry(100, 100, 500, 200)
 
     def updateClipboard(self):
         cliptext = pyperclip.paste()
         self.processClipping(cliptext)
+        QTimer.singleShot(100, self.updateClipboard)
 
     def processClipping(self, cliptext):
-        cliptextCleaned = self.cleanClipText(cliptext)
-        self.label.setText(cliptextCleaned)
-        self.updateClickableText(cliptextCleaned)
+        cliptext_cleaned = self.cleanClipText(cliptext)
+        self.label.setText(cliptext_cleaned)
 
     def cleanClipText(self, cliptext):
-        cliptext = "".join([c for c in cliptext if ord(c) <= 65535])
+        cliptext = ''.join([c for c in cliptext if ord(c) <= 65535])
         return cliptext
 
-    def updateClickableText(self, cliptext):
-        words = cliptext.split()
-        clickable_text = ""
+    def mousePressEvent(self, event):
+        self.onClick(event)
 
-        for word in words:
-            clickable_text += f'<a href="{word}">{word}</a> '
+    def onClick(self, event):
+        label_text = self.label.text()
+        print("Copiado: ", label_text)
+        pyperclip.copy(label_text)
 
-        self.label.setText(clickable_text)
-        self.label.linkActivated.connect(self.copyToClipboard)
+    def createTrayIcon(self):
+        if self.trayIcon is None:  # Verifica se o ícone já foi criado
+            self.trayIcon = QSystemTrayIcon(QIcon('Ditto.ico'), self)
+            self.trayIcon.setToolTip('Ditto Clipboard Manager')
 
-    def copyToClipboard(self, link):
-        self.clipboard().setText(link)
+            showAction = QAction('Abrir', self)
+            exitAction = QAction('Sair', self)
 
-    def start(self):
-        threading.Thread(target=self.check_user_activity).start()
+            showAction.triggered.connect(self.show)
+            exitAction.triggered.connect(self.exitApplication)
 
-    def stop(self):
-        self.running = False
+            trayMenu = QMenu()
+            trayMenu.addAction(showAction)
+            trayMenu.addAction(exitAction)
 
-def show_menu(icon, item):
-    if item.text == 'Abrir':
-        prog.show()
-    elif item.text == 'Encerrar':
-        prog.stop()
-        icon.stop()
+            self.trayIcon.setContextMenu(trayMenu)
+            self.trayIcon.show()
 
-def main():
-    global prog
-    prog = Ditto()
-    prog.start()
+    def exitApplication(self):
+        self.trayIcon.hide()
+        QApplication.quit()
 
-    image = Image.open("Ditto.ico")
-
-    menu = (
-        pystray.MenuItem('Abrir', show_menu),
-        pystray.MenuItem('Encerrar', show_menu),
-    )
-
-    menu_icon = pystray.Icon(prog.name, image, prog.name, menu)
-    menu_icon.run()
+    def closeEvent(self, event):
+        event.ignore()
+        self.hide()
+        self.createTrayIcon()
 
 if __name__ == '__main__':
-    main()
+    app = QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(False)
+
+    mainWindow = Ditto()
+    mainWindow.show()
+
+    sys.exit(app.exec_())
