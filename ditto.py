@@ -8,8 +8,9 @@ class Ditto(QMainWindow):
     def __init__(self):
         super().__init__()
         self.trayIcon = None
-
         self.initUI()
+        self.clipboard_entries = []
+
         self.updateClipboard()
 
     def initUI(self):
@@ -17,40 +18,50 @@ class Ditto(QMainWindow):
         self.setCentralWidget(central_widget)
 
         layout = QVBoxLayout()
-        self.label = QLabel("", self)
-        self.label.setCursor(Qt.PointingHandCursor)
-        self.label.setFrameStyle(QLabel.Panel | QLabel.Raised)
-        self.label.setMargin(5)
-        self.label.setWordWrap(True)
-        layout.addWidget(self.label)
+
+        self.label_widgets = []
+
+        for _ in range(10):
+            label = QLabel("", self)
+            label.setFixedHeight(50)
+            label.setAlignment(Qt.AlignTop)
+            label.setFrameStyle(QLabel.Panel | QLabel.Raised)
+            label.setLineWidth(1)
+            label.setMidLineWidth(1)
+            layout.addWidget(label)
+            self.label_widgets.append(label)
 
         central_widget.setLayout(layout)
 
-        self.setWindowTitle("Ditto's Clipboard Manager")
+        self.setWindowTitle("Ditto")
         icon = QIcon("Ditto.ico")
         self.setWindowIcon(icon)
-        self.setGeometry(100, 100, 500, 200)
+        self.setGeometry(100, 100, 400, 500)
+
+        for label in self.label_widgets:
+            label.mousePressEvent = lambda event, l=label: self.copyLabelContent(l)
 
     def updateClipboard(self):
         cliptext = pyperclip.paste()
-        self.processClipping(cliptext)
+
+        if not self.clipboard_entries or cliptext != self.clipboard_entries[0][1]:
+            new_entry = (1, cliptext)
+            self.clipboard_entries.insert(0, new_entry)
+
+            if len(self.clipboard_entries) > 10:
+                self.clipboard_entries.pop()
+
+            self.updateLabels()
         QTimer.singleShot(100, self.updateClipboard)
 
-    def processClipping(self, cliptext):
-        cliptext_cleaned = self.cleanClipText(cliptext)
-        self.label.setText(cliptext_cleaned)
+    def updateLabels(self):
+        for i, (position, item) in enumerate(self.clipboard_entries):
+            self.label_widgets[i].setText(item)
 
-    def cleanClipText(self, cliptext):
-        cliptext = ''.join([c for c in cliptext if ord(c) <= 65535])
-        return cliptext
-
-    def mousePressEvent(self, event):
-        self.onClick(event)
-
-    def onClick(self, event):
-        label_text = self.label.text()
-        print("Copiado: ", label_text)
-        pyperclip.copy(label_text)
+    def copyLabelContent(self, label):
+        content = label.text()
+        if content:
+            pyperclip.copy(content)
 
     def createTrayIcon(self):
         if self.trayIcon is None:  # Verifica se o ícone já foi criado
