@@ -22,24 +22,36 @@ class Ditto(QMainWindow):
         self.label_widgets = []
 
         for _ in range(10):
-            label = QLabel("", self)
+            label = QLabel("", self) 
             label.setFixedHeight(50)
             label.setAlignment(Qt.AlignTop)
             label.setFrameStyle(QLabel.Panel | QLabel.Raised)
             label.setLineWidth(1)
             label.setMidLineWidth(1)
             layout.addWidget(label)
-            self.label_widgets.append(label)
+            self.label_widgets.append(label) 
 
         central_widget.setLayout(layout)
 
         self.setWindowTitle("Ditto")
         icon = QIcon("Ditto.ico")
         self.setWindowIcon(icon)
-        self.setGeometry(100, 100, 400, 500)
+        self.setGeometry(50, 50, 400, 500)
 
         for label in self.label_widgets:
             label.mousePressEvent = lambda event, l=label: self.copyLabelContent(l)
+
+        # Cria um novo estilo para o QLabel
+        label_style = """
+            QLabel {
+                font-size: 14px;
+                background-color: white;
+                border: 3px groove #9c5ab4;
+            }
+        """
+        central_widget.setStyleSheet(label_style)
+        self.setStyleSheet("font-weight: bold; font-family: Calibri; letter-spacing: 1px; background-color: #c57be6;")
+
 
     def updateClipboard(self):
         cliptext = pyperclip.paste()
@@ -66,7 +78,7 @@ class Ditto(QMainWindow):
     def createTrayIcon(self):
         if self.trayIcon is None:  # Verifica se o ícone já foi criado
             self.trayIcon = QSystemTrayIcon(QIcon('Ditto.ico'), self)
-            self.trayIcon.setToolTip('Ditto Clipboard Manager')
+            self.trayIcon.setToolTip('Ditto')
 
             showAction = QAction('Abrir', self)
             exitAction = QAction('Sair', self)
