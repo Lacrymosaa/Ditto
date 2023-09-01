@@ -12,6 +12,7 @@ class Ditto(QMainWindow):
         self.clipboard_entries = []
 
         self.updateClipboard()
+        self.createTrayIcon()
 
     def initUI(self):
         central_widget = QWidget(self)
@@ -96,11 +97,6 @@ class Ditto(QMainWindow):
     def exitApplication(self):
         self.trayIcon.hide()
         QApplication.quit()
-
-    def closeEvent(self, event):
-        event.ignore()
-        self.hide()
-        self.createTrayIcon()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
